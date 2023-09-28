@@ -9,11 +9,12 @@
 
 #include "globals.h"
 
+#include "engine/dom/node.hpp"
+#include "engine/dom/text.hpp"
+#include "engine/dom/element.hpp"
 
-#include "ui/base_rect.h"
-#include "ui/container.h"
-#include "ui/text.h"
-
+#include "engine/style/style_node.hpp"
+#include "engine/layout/layout_node.hpp"
 
 // consts
 #define WIDTH 600
@@ -84,28 +85,50 @@ std::string get_time_str(const char* seprator = ":") {
 
 
 
+
 int main()
 {
+
+
+
+    Element root("app");
+    root.style.props["margin"] = "10 10 10 10";
+    root.style.props["padding"] = "10 10 10 10";
+    root.style.props["bg"] = "red";
+
+
+    Element body("body");
+    
+    Text t1("Hello Mada fucka");
+    t1.style.props["display"] = DisplayInline;
+    Text t2("Hello Mada fucka");
+    t2.style.props["display"] = DisplayInline;
+
+
+    Element body1("body1");
+
+
+
+    body.children.push_back(&t1);
+    root.children.push_back(&body);
+    root.children.push_back(&body1);
+
+    StyleNode style_tree;
+    style_tree.build_tree(&root);
+    style_tree_print(style_tree);
+
+    printf("\n");
+
+    LayoutNode layout;
+    layout.build_tree(&style_tree);
+
+    printf("\n");
+
+    layout_tree_print(layout);    
+
+  
+    return 1;
     init();
-
-    UIContainer app(0,0,WIDTH,HEIGHT);
-    app.styles.set_padding("10","20","10","10");
-    app.styles.set_margin("10","10","10","10");
-
-    UIText text_date;
-    text_date.print_text(renderer,"2022-10-15");
-    text_date.styles.set_margin("10","10","20","10");
-    text_date.styles.Horz = Right;
-
-    UIText text_time;
-    text_time.styles.set_margin("10","10","20","10");
-    text_time.styles.Horz = Right;
-
-
-    app.append(&text_date);
-    app.append(&text_time);
-
-
     // children
 
     bool done = false;
@@ -129,18 +152,11 @@ int main()
         }
 
         
-        // update
-        text_date.print_text(renderer,get_date_str().c_str());
-        text_time.print_text(renderer,get_time_str().c_str());
-        app.update();
-
 
         // render
         SDL_SetRenderDrawColor(renderer, hex_to_color(0x000000));
         SDL_RenderClear(renderer);
 
-
-        app.render(renderer);
 
         // AppBody.render(renderer);
 

@@ -38,13 +38,13 @@ public:
     }
 
 
-    void calc_outer_bbox() override {
-        outer_bbox = rect;
-        Offset p1(rect.x,rect.y);
-        Offset p2(rect.x + rect.w,rect.y + rect.h);
-
-        StyleContext context = {rect.w,rect.h};
-        RelativeStyleSetting r_style = styles.parse_style(context);
+    // void calc_outer_bbox() override {
+        // outer_bbox = rect;
+        // Offset p1(rect.x,rect.y);
+        // Offset p2(rect.x + rect.w,rect.y + rect.h);
+// 
+        // StyleContext context = {rect.w,rect.h};
+        // RelativeStyleSetting r_style = styles.parse_style(context);
 
         // // top
         // if(p1.y - r_style.margin[0] >= parent->inner_bbox.y) {
@@ -88,7 +88,7 @@ public:
 
         // rect.x = outer_bbox.x;
         // rect.y += r_style.margin[0];
-    }
+    // }
 
     void update(Offset l_offset = ZeroOffset,Offset r_offset = ZeroOffset) override {
         UIBaseRect::update(l_offset,r_offset);

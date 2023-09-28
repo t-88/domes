@@ -21,6 +21,10 @@ public:
 
     int index;
 
+    int max_children = 11;
+    std::vector<UIBaseRect*> children;
+
+
 
     UIBaseRect() { main_rect.set_rect(0,0,0,0); }
     UIBaseRect(int x,int y,int w,int h) { main_rect.set_rect(x,y,w,h); }
@@ -40,15 +44,26 @@ public:
     }
     
     virtual void calc_outer_bbox() {
-        outer_bbox = rect;
+        if(!parent) {
+            rect = main_rect;
+            outer_bbox = rect;
 
-        StyleContext context = {rect.w,rect.h};
-        RelativeStyleSetting r_style = styles.parse_style(context);
+            StyleContext context = {rect.w,rect.h};
+            RelativeStyleSetting r_style = styles.parse_style(context);
 
-        rect.y += r_style.margin[0];
-        rect.w -= r_style.margin[1] + r_style.margin[3];
-        rect.h -= r_style.margin[2] + r_style.margin[0];
-        rect.x += r_style.margin[3];
+            rect.y += r_style.margin[0];
+            rect.w -= r_style.margin[1] + r_style.margin[3];
+            rect.h -= r_style.margin[2] + r_style.margin[0];
+            rect.x += r_style.margin[3];
+
+        } else {
+            UIBaseRect* collided_with;
+            if(((UIContainer*)parent)->child_collided(this,collided_with)) {
+
+            }
+
+        }
+
     }
 
     void update_offset(Offset* l_offset,Offset* r_offset) { 
@@ -63,18 +78,16 @@ public:
 
 
     virtual void update(Offset l_offset = ZeroOffset,Offset r_offset = ZeroOffset) {
-        rect = main_rect;
-        
-        if(styles.Horz == Left) {
-            rect.x += l_offset.x;
-            rect.y += l_offset.y;
-        }  else {
-            rect.x += r_offset.x - rect.w;
-            rect.y += r_offset.y;
-        }
-
+        outer_bbox = main_rect;
         calc_outer_bbox();
+
+
+
+
+
         calc_inner_bbox();
+
+
 
         // rect.print();
         // inner_bbox.print();

@@ -60,6 +60,19 @@
         "cfenv": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "__nullptr": "cpp"
+        "__nullptr": "cpp",
+        "strstream": "cpp",
+        "complex": "cpp",
+        "list": "cpp",
+        "iomanip": "cpp",
+        "sstream": "cpp",
+        "typeindex": "cpp",
+        "variant": "cpp",
+        "__locale": "cpp",
+        "__hash_table": "cpp",
+        "__split_buffer": "cpp",
+        "__tree": "cpp",
+        "queue": "cpp",
+        "stack": "cpp"
     }
 }
