@@ -11,6 +11,14 @@
 
 
 namespace Globals {
+    int width , height;
+
+    void set_window_sizing(int w, int h) {
+        width = w;
+        width = h;
+    }
+
+
     void memory_free();
 
 
@@ -27,7 +35,7 @@ namespace Globals {
         TTF_CloseFont(font);
     }
 
-} // namespace Globals
+} 
 
 
 

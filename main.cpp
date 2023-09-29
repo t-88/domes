@@ -16,10 +16,6 @@
 #include "engine/style/style_node.hpp"
 #include "engine/layout/layout_node.hpp"
 
-// consts
-#define WIDTH 600
-#define HEIGHT 400
-
 // namespaces
 
 // globals
@@ -43,7 +39,7 @@ void init() {
                         "Domes",
                         SDL_WINDOWPOS_CENTERED, 
                         SDL_WINDOWPOS_CENTERED, 
-                        WIDTH, HEIGHT, 0);
+                        Globals::width, Globals::height, 0);
     renderer = SDL_CreateRenderer(window, -1, 0);    
 
 }
@@ -86,23 +82,39 @@ std::string get_time_str(const char* seprator = ":") {
 
 
 
-int main()
-{
+void prop_tree_print(LayoutNode* layout_root,int depth = 0) { 
+    if(depth == 0) {
+        // layout_root->style_node->dom_node->style.print();
+        printf("%*s%s\n",depth * 4,"",layout_root->style_node->dom_node->style.props["width"].c_str());
+        depth++;
+    }
+    
+    for (size_t i = 0; i < layout_root->nodes.size(); i++) {
+        printf("%*s%s\n",depth * 4,"",layout_root->style_node->dom_node->style.props["width"].c_str());
+        // layout_root->style_node->dom_node->style.print();
+        prop_tree_print(layout_root->nodes[i], depth + 1);
+    }
+}
 
+
+int main() {
+    Globals::set_window_sizing(600,400);
 
 
     Element root("app");
-    root.style.props["margin"] = "10 10 10 10";
-    root.style.props["padding"] = "10 10 10 10";
-    root.style.props["bg"] = "red";
+    root.style.props["width"] =  std::to_string(Globals::width);
+    root.style.props["height"] = std::to_string(Globals::height);
+
+    // root.style.props["margin"] = "10 10 10 10";
+    // root.style.props["padding"] = "10 10 10 10";
 
 
     Element body("body");
     
     Text t1("Hello Mada fucka");
-    t1.style.props["display"] = DisplayInline;
+    t1.style.props["display"] = DisplayBlock;
     Text t2("Hello Mada fucka");
-    t2.style.props["display"] = DisplayInline;
+    t2.style.props["display"] = DisplayBlock;
 
 
     Element body1("body1");
@@ -123,9 +135,9 @@ int main()
     layout.build_tree(&style_tree);
 
     printf("\n");
+    layout_tree_print(&layout);  
 
-    layout_tree_print(layout);    
-
+    layout.lay_it_out();  
   
     return 1;
     init();

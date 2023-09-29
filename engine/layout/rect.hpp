@@ -14,6 +14,10 @@ public:
     }
 
     ~Rect() {}
+
+    void print() {
+        printf("%d %d %d %d\n",x,y,w,h);
+    }
 };
 
 #endif // ENGINE_LAYOUT_RECT_H
