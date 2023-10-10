@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <assert.h>
-
 #include "../style/style_node.hpp"
 #include "../dom/node.hpp"
 #include "./box.hpp"
@@ -35,6 +34,10 @@ public:
     
     ~LayoutNode() {}
 
+
+    void print_element() {
+        printf("%s\n",style_node->dom_node->id.c_str());
+    }
     void append(LayoutNode* ln) {
         ln->parent = this;
         nodes.push_back(ln);
@@ -60,20 +63,27 @@ public:
         if(parent == nullptr) {
             box.rect.w = to_px(style_node->dom_node->style.props["width"]);
             box.rect.h = to_px(style_node->dom_node->style.props["height"]);
-            assert((box.rect.w == 0 || box.rect.h == 0) && "sizing for the root node is not set");
+
+            // height can be the same as the children but the width depends on the total width of the screen 
+            assert((box.rect.w != 0) && "root width is not given");
         }
+
+        
         calc_width();
+        calc_margin();
+        lay_children();
+        calc_position();
+        calc_height();
     }
+
+
     void calc_width() {
         Box parent_box = box;
-
         if(parent != nullptr) { 
             parent_box = parent->box;
         } 
 
-
         auto style = style_node->dom_node->style;
-
 
         std::string width = "auto";
         if(style.props.count("width") != 0 && style.props["width"] != "auto") { width = style.props["width"]; } 
@@ -85,18 +95,9 @@ public:
         if(style.props.count("margin_right") != 0 && style.props["margin_right"] != "auto") 
             { margin_right = style.props["margin_right"]; } 
 
-        std::string padding_left = "auto";
-        if(style.props.count("padding_left") != 0 && style.props["padding_left"] != "auto") 
-            { padding_left = style.props["padding_left"]; } 
-        std::string padding_right = "auto";
-        if(style.props.count("padding_right") != 0 && style.props["padding_right"] != "auto") 
-            { padding_right = style.props["padding_right"]; } 
 
     
-    
-        int sum = to_px(margin_left) + to_px(margin_right) +
-                  to_px(padding_left) + to_px(padding_right) +
-                  to_px(width);
+        int sum = to_px(margin_left) + to_px(margin_right) + to_px(width);
 
         if(width != "auto" && sum > parent_box.rect.w) {
             if(margin_left == "auto") margin_left = "0";
@@ -134,7 +135,6 @@ public:
                     margin_left = std::to_string((int) underflow  / 2);
                 break;
                 default:
-                    printf("->  0x%X\n",state);
                     assert(false && "no way it hits here");
                 break;
             } 
@@ -144,17 +144,57 @@ public:
         style_node->dom_node->style.props["width"] = width;
         style_node->dom_node->style.props["margin_left"] = margin_left;
         style_node->dom_node->style.props["margin_right"] = margin_right;
-        style_node->dom_node->style.props["padding_left"] = padding_left;
-        style_node->dom_node->style.props["padding_right"] = padding_right;
         box.rect.w = to_px(width);
+    }
+
+    void calc_margin() {
+        auto style = style_node->dom_node->style;
+
+        std::string width = "auto";
+        if(style.props.count("width") != 0 && style.props["width"] != "auto") { width = style.props["width"]; } 
+
+        std::string margin_top = "auto";
+        if(style.props.count("margin_top") != 0 && style.props["margin_top"] != "auto") 
+            { margin_top = style.props["margin_top"]; } 
+        std::string margin_bottom = "auto";
+        if(style.props.count("margin_bottom") != 0 && style.props["margin_bottom"] != "auto") 
+            { margin_bottom = style.props["margin_bottom"]; } 
 
 
-        for (size_t i = 0; i < nodes.size(); i++) {
+        box.margin.top =  to_px(margin_top);
+        box.margin.bottom = to_px(margin_bottom);
+    }
+
+    void calc_position() { 
+
+
+
+
+        Box containg_box = parent ? parent->box : Box();
+        box.rect.x = containg_box.rect.x + box.margin.left + box.padding.left; 
+        box.rect.y = containg_box.rect.h + containg_box.rect.y + box.margin.top + box.padding.top; 
+    }
+
+    void lay_children() {
+        box.rect.h = box.get_margin_rect().h;
+        for (size_t i = 0; i < nodes.size(); i++){
             nodes[i]->lay_it_out();
+            box.rect.h += nodes[i]->box.get_margin_rect().h;
+
+            nodes[i]->print_element();
+            nodes[i]->box.get_margin_rect().print();
+            nodes[i]->box.margin.print();
+            printf("----\n");
         }
         
     }
 
+    void calc_height() {
+        auto style = style_node->dom_node->style;
+        if(style.props.count("height") != 0 && style.props["height"] != "auto") { 
+            box.rect.h = to_px(style.props["height"]); 
+        } 
+    }
 
 
 };

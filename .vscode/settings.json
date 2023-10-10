@@ -77,6 +77,11 @@
         "csignal": "cpp",
         "codecvt": "cpp",
         "fstream": "cpp",
-        "valarray": "cpp"
-    }
+        "valarray": "cpp",
+        "*.ipp": "cpp",
+        "__bit_reference": "cpp",
+        "ios": "cpp",
+        "filesystem": "cpp"
+    },
+    "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

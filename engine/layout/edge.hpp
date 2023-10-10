@@ -6,11 +6,15 @@
 
 class Edge {
 public:
-    unsigned int top, left, right, buttom;
+    int top, left, right, bottom;
 
-    Edge():top(0),left(0),right(0),buttom(0) { }
-    Edge(unsigned int t, unsigned int  r ,unsigned int  l ,unsigned int  b):top(t),left(l),right(r),buttom(b) {
+    Edge():top(0),left(0),right(0),bottom(0) { }
+    Edge(int t, int  r ,int  l ,int  b):top(t),left(l),right(r),bottom(b) {
 
+    }
+
+    void print() {
+        printf("%d %d %d %d\n",top,left,bottom,right);
     }
 
 

@@ -15,7 +15,7 @@ namespace Globals {
 
     void set_window_sizing(int w, int h) {
         width = w;
-        width = h;
+        height = h;
     }
 
 

@@ -82,18 +82,43 @@ std::string get_time_str(const char* seprator = ":") {
 
 
 
-void prop_tree_print(LayoutNode* layout_root,int depth = 0) { 
+void prop_tree_print(LayoutNode* layout_root,int depth = 0) {
+    auto prop_print = [](int depth = 0,LayoutNode* lr) {
+        printf("%*s%s x: %d y: %d w: %d h: %d\n",depth * 4,"",lr->style_node->dom_node->id.c_str(),lr->box.rect.x,lr->box.rect.y,lr->box.rect.w,lr->box.rect.h);
+    };
+
+
     if(depth == 0) {
-        // layout_root->style_node->dom_node->style.print();
-        printf("%*s%s\n",depth * 4,"",layout_root->style_node->dom_node->style.props["width"].c_str());
+        prop_print(depth,layout_root);
         depth++;
     }
-    
     for (size_t i = 0; i < layout_root->nodes.size(); i++) {
-        printf("%*s%s\n",depth * 4,"",layout_root->style_node->dom_node->style.props["width"].c_str());
-        // layout_root->style_node->dom_node->style.print();
+        prop_print(depth,layout_root->nodes[i]);
         prop_tree_print(layout_root->nodes[i], depth + 1);
     }
+    
+}
+
+void layout_tree_render(SDL_Renderer* renderer,LayoutNode lr) {
+    SDL_Rect main_rect = (SDL_Rect) lr.box.get_rect();
+    SDL_Rect margin_rect = (SDL_Rect) lr.box.get_margin_rect();
+
+
+
+    auto margin_color = to_color(lr.style_node->dom_node->style.props["margin_color"]);
+    SDL_SetRenderDrawColor(renderer,margin_color.r,margin_color.g,margin_color.b,margin_color.a);
+    SDL_RenderFillRect(renderer,&margin_rect);
+
+
+    auto main_color = to_color(lr.style_node->dom_node->style.props["color"]);
+    SDL_SetRenderDrawColor(renderer,main_color.r,main_color.g,main_color.b,main_color.a);
+    SDL_RenderFillRect(renderer,&main_rect);
+
+
+    for (size_t i = 0; i < lr.nodes.size(); i++) {
+        layout_tree_render(renderer,*lr.nodes[i]);
+    }
+
 }
 
 
@@ -103,45 +128,48 @@ int main() {
 
     Element root("app");
     root.style.props["width"] =  std::to_string(Globals::width);
-    root.style.props["height"] = std::to_string(Globals::height);
-
-    // root.style.props["margin"] = "10 10 10 10";
-    // root.style.props["padding"] = "10 10 10 10";
+    root.style.props["margin_top"] = "0";
+    root.style.props["margin_bottom"] = "0";
 
 
     Element body("body");
-    
-    Text t1("Hello Mada fucka");
-    t1.style.props["display"] = DisplayBlock;
-    Text t2("Hello Mada fucka");
-    t2.style.props["display"] = DisplayBlock;
-
+    body.set_style("color","0 255 0 255");
+    body.set_style("margin_color","0 0 0 255");
+    body.style.props["height"] = "50";  
+    body.style.props["margin_top"] = "10";
+    body.style.props["margin_bottom"] = "10";
 
     Element body1("body1");
+    body1.set_style("color","0 255 255 255");
+    body1.set_style("margin_color","0 0 0 255");
+    body1.style.props["height"] = "50";  
+    body1.style.props["margin_top"] = "100";
+    body1.style.props["margin_bottom"] = "10";
 
 
 
-    body.children.push_back(&t1);
     root.children.push_back(&body);
     root.children.push_back(&body1);
 
+
+
+    printf("style tree:\n");
     StyleNode style_tree;
     style_tree.build_tree(&root);
     style_tree_print(style_tree);
 
     printf("\n");
+    printf("layout tree:\n");
+    LayoutNode layout_tree;
+    layout_tree.build_tree(&style_tree);
+    layout_tree_print(&layout_tree);
 
-    LayoutNode layout;
-    layout.build_tree(&style_tree);
+    layout_tree.lay_it_out();
 
     printf("\n");
-    layout_tree_print(&layout);  
+    prop_tree_print(&layout_tree);
 
-    layout.lay_it_out();  
-  
-    return 1;
     init();
-    // children
 
     bool done = false;
     while (!done)
@@ -169,6 +197,7 @@ int main() {
         SDL_SetRenderDrawColor(renderer, hex_to_color(0x000000));
         SDL_RenderClear(renderer);
 
+        layout_tree_render(renderer,layout_tree);
 
         // AppBody.render(renderer);
 

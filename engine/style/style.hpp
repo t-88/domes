@@ -6,6 +6,8 @@
 #include <unordered_map>
 
 
+#include "SDL2/SDL.h"
+
 typedef std::unordered_map<std::string,std::string> StyleProps; 
 
 #define DisplayBlock "block"
@@ -43,6 +45,10 @@ public:
     
         props["padding_left"] = AUTO;
         props["padding_right"] = AUTO;
+
+
+        props["color"] = "255 255 255 255";
+        props["margin_color"] = "255 0 0 255";
     }
 
     void print() {
@@ -57,6 +63,30 @@ public:
 int to_px(std::string in) {
     if(in == "auto" || in == "") return 0;
     return std::stoi(in,0,10);
+}
+
+SDL_Color to_color(std::string in) {
+    in.push_back(' ');
+    
+    SDL_Color color;
+    int i = 0;
+    
+    std::string number;
+    Uint8 comps[4];
+    int cur_comp = 0;
+
+    while (i < in.size()) {
+        if(in.at(i) == ' ') {
+            comps[cur_comp] = std::stoi(number,0,10);
+            number = "";
+            cur_comp++;
+        } else {
+            number.push_back(in.at(i));
+        }
+        i++;
+    }
+
+    return (SDL_Color){comps[0],comps[1],comps[2],comps[3]};
 }
 
 

@@ -25,6 +25,10 @@ public:
     Node(){}
     Node(NodeType t) : node_type(t) { }
     ~Node(){}
+
+    void set_style(std::string ident,std::string value) {
+        style.props[ident] = value;
+    }
 };
 
 
