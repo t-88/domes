@@ -12,6 +12,10 @@
 
 namespace Globals {
     int width , height;
+    int font_width;
+    int font_height;
+
+    SDL_Renderer* renderer;
 
     void set_window_sizing(int w, int h) {
         width = w;
@@ -23,11 +27,12 @@ namespace Globals {
 
 
     TTF_Font* font;
-    int font_size = 20;
+    int font_size = 25;
 
     void load_font(const char* file_path) {
         if(font) memory_free();
         font = TTF_OpenFont(file_path,font_size);
+        TTF_SizeText(font,"A",&font_width,&font_height);
     }
 
 

@@ -19,6 +19,7 @@ public:
     Element(std::string tn) : Node(NodeTypes::Elem) {
         tag_name = tn;
         id = tn;
+        type = "element";
     }
     Element(Attribs a) : Node(NodeTypes::Elem) {
         attribs = a;

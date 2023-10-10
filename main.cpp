@@ -16,6 +16,8 @@
 #include "engine/style/style_node.hpp"
 #include "engine/layout/layout_node.hpp"
 
+#include "engine/render/display_buffer.hpp"
+
 // namespaces
 
 // globals
@@ -30,10 +32,11 @@ static TTF_Font* font;
 // functinos
 // init
 void init() {
+    Globals::set_window_sizing(600,400);
     SDL_Init(SDL_INIT_EVERYTHING);
     TTF_Init();
 
-    Globals::load_font("font/IBMPlexMono-Bold.ttf");
+    Globals::load_font("font/SpaceMono-Regular.ttf");
 
     window = SDL_CreateWindow(
                         "Domes",
@@ -41,6 +44,9 @@ void init() {
                         SDL_WINDOWPOS_CENTERED, 
                         Globals::width, Globals::height, 0);
     renderer = SDL_CreateRenderer(window, -1, 0);    
+
+
+    Globals::renderer = renderer;
 
 }
 // quit
@@ -81,7 +87,6 @@ std::string get_time_str(const char* seprator = ":") {
 
 
 
-
 void prop_tree_print(LayoutNode* layout_root,int depth = 0) {
     auto prop_print = [](int depth = 0,LayoutNode* lr) {
         printf("%*s%s x: %d y: %d w: %d h: %d\n",depth * 4,"",lr->style_node->dom_node->id.c_str(),lr->box.rect.x,lr->box.rect.y,lr->box.rect.w,lr->box.rect.h);
@@ -103,12 +108,9 @@ void layout_tree_render(SDL_Renderer* renderer,LayoutNode lr) {
     SDL_Rect main_rect = (SDL_Rect) lr.box.get_rect();
     SDL_Rect margin_rect = (SDL_Rect) lr.box.get_margin_rect();
 
-
-
     auto margin_color = to_color(lr.style_node->dom_node->style.props["margin_color"]);
     SDL_SetRenderDrawColor(renderer,margin_color.r,margin_color.g,margin_color.b,margin_color.a);
     SDL_RenderFillRect(renderer,&margin_rect);
-
 
     auto main_color = to_color(lr.style_node->dom_node->style.props["color"]);
     SDL_SetRenderDrawColor(renderer,main_color.r,main_color.g,main_color.b,main_color.a);
@@ -118,38 +120,39 @@ void layout_tree_render(SDL_Renderer* renderer,LayoutNode lr) {
     for (size_t i = 0; i < lr.nodes.size(); i++) {
         layout_tree_render(renderer,*lr.nodes[i]);
     }
-
 }
 
 
 int main() {
-    Globals::set_window_sizing(600,400);
+    init();
+
 
 
     Element root("app");
     root.style.props["width"] =  std::to_string(Globals::width);
+    root.style.props["color"] = "0 0 0 255";
     root.style.props["margin_top"] = "0";
     root.style.props["margin_bottom"] = "0";
 
 
-    Element body("body");
-    body.set_style("color","0 255 0 255");
-    body.set_style("margin_color","0 0 0 255");
-    body.style.props["height"] = "50";  
-    body.style.props["margin_top"] = "10";
-    body.style.props["margin_bottom"] = "10";
+    Text logo_text("DoMe");
+    logo_text.set_style("color","255 0 0 255");
+    logo_text.set_style("margin_top","10");
+    logo_text.set_style("margin_bottom","10");
 
-    Element body1("body1");
-    body1.set_style("color","0 255 255 255");
-    body1.set_style("margin_color","0 0 0 255");
-    body1.style.props["height"] = "50";  
-    body1.style.props["margin_top"] = "100";
-    body1.style.props["margin_bottom"] = "10";
+    Text date_text(get_date_str());
+    date_text.set_style("color","255 0 0 255");
+
+
+    Text time_text(get_time_str());
+    time_text.set_style("color","255 0 0 255");
 
 
 
-    root.children.push_back(&body);
-    root.children.push_back(&body1);
+
+    root.children.push_back(&logo_text);
+    root.children.push_back(&date_text);
+    root.children.push_back(&time_text);
 
 
 
@@ -166,10 +169,16 @@ int main() {
 
     layout_tree.lay_it_out();
 
+
+
     printf("\n");
     prop_tree_print(&layout_tree);
 
-    init();
+
+
+    DisplayBuffer buffer;
+    buffer.build_buffer(&layout_tree);
+    printf("%ld\n",buffer.buffer.size());
 
     bool done = false;
     while (!done)
@@ -191,15 +200,17 @@ int main() {
             }
         }
 
-        
+        // update
+        time_text.text = get_time_str();
+        buffer.build_buffer(&layout_tree);
+
 
         // render
         SDL_SetRenderDrawColor(renderer, hex_to_color(0x000000));
         SDL_RenderClear(renderer);
 
-        layout_tree_render(renderer,layout_tree);
 
-        // AppBody.render(renderer);
+        buffer.render(renderer);
 
         SDL_RenderPresent(renderer);
     }

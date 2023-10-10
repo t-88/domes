@@ -20,6 +20,7 @@ public:
     Style style;
 
     std::string id = "node";
+    std::string type = "node";
 
 
     Node(){}
