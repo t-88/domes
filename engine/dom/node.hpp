@@ -14,6 +14,7 @@ typedef int NodeType ;
 
 class Node
 {
+
 public:
     std::vector<Node*> children;
     NodeType node_type;
@@ -23,12 +24,20 @@ public:
     std::string type = "node";
 
 
+    void (*onClickCallback)() = nullptr;
+
+
     Node(){}
     Node(NodeType t) : node_type(t) { }
     ~Node(){}
 
     void set_style(std::string ident,std::string value) {
         style.props[ident] = value;
+    }
+
+    void onClick() {
+        if(!onClickCallback) return;
+        onClickCallback();
     }
 };
 

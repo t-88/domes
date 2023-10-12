@@ -27,8 +27,9 @@ public:
         } else if(node_type == "text") {
             buffer.push_back((RNode*) (new RText(lr)));
         } else {
-            printf("%s\n",node_type.c_str());
-            assert(false && "Unreachable!!");
+            buffer.push_back((RNode*) (new RRect(lr)));
+            // printf("%s\n",node_type.c_str());
+            // assert(false && "Unreachable!!");
         }
 
         for (size_t i = 0; i < lr->nodes.size(); i++) {

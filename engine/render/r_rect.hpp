@@ -19,6 +19,7 @@ public:
         SDL_SetRenderDrawColor(renderer,margin_color.r,margin_color.g,margin_color.b,margin_color.a);
         SDL_RenderFillRect(renderer,&margin_rect);
 
+
         auto main_color = to_color(lnode->style_node->dom_node->style.props["color"]);
         SDL_SetRenderDrawColor(renderer,main_color.r,main_color.g,main_color.b,main_color.a);
         SDL_RenderFillRect(renderer,&main_rect);

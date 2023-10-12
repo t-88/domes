@@ -29,6 +29,10 @@ public:
             rect.h + margin.top + margin.bottom
         );
     }
+
+    bool collide(int x , int y) {
+        return rect.x + rect.w > x  && x + 1 > rect.x && rect.y + rect.h > y && y + 1 > rect.y; 
+    }
 };
 
 #endif // ENGINE_LAYOUT_BOX_H

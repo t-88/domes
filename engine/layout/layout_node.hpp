@@ -7,12 +7,35 @@
 #include "../dom/node.hpp"
 #include "./box.hpp"
 
+
 const static int LAYOUT_TREE_PRINT_DEPTH_SPACING = 2;
 #define UNINITIALIZED_DISPLAY "un-init-display"
 
 
 class LayoutNode;
 static void travese_layout_tree(LayoutNode* root);
+
+
+
+namespace Event {
+    typedef enum EventType {
+        MouseEvent
+    } EventType;
+
+    typedef enum EventTypeState {
+        MouseDown,
+        MouseUp,
+    } EventTypeState;
+
+
+    typedef struct Event {
+        EventType type;
+        EventTypeState type_state;
+
+        int x , y;
+        int button;
+    } Event;
+}
 
 
 
@@ -29,6 +52,42 @@ public:
     LayoutNode(){}
     LayoutNode(StyleNode* sn) : style_node(sn) {
         display_box = sn->dom_node->style.props["display"];
+    }
+
+
+
+    void fire_event(Event::Event event) {
+        switch (event.type)
+        {
+            case Event::MouseEvent: 
+                switch (event.type_state)
+                {
+                    case Event::MouseDown: 
+                        onClick(event.button,event.x,event.y);
+                    break;
+
+                    default:
+                        break;
+                }
+            break;
+
+            default:
+                break;
+        }
+
+    }
+
+
+    void traverse_onClick(int button,int x , int y) {
+        for (size_t i = 0; i < nodes.size(); i++) {
+            nodes[i]->onClick(button,x,y);
+        }
+    }
+    void onClick(int button,int x , int y) {
+        if(box.collide(x,y)) {
+            style_node->dom_node->onClick();
+            traverse_onClick(button,x,y);
+        }
     }
     
     
@@ -65,14 +124,12 @@ public:
     void calc_vertical_margins() {
         auto style = style_node->dom_node->style;
 
-        std::string width = "auto";
-        if(style.props.count("width") != 0 && style.props["width"] != "auto") { width = style.props["width"]; } 
+        std::string margin_bottom = AUTO;
+        std::string margin_top = AUTO;
 
-        std::string margin_top = "auto";
-        if(style.props.count("margin_top") != 0 && style.props["margin_top"] != "auto") 
+        if(style.props.count("margin_top") != 0 && style.props["margin_top"] != AUTO) 
             { margin_top = style.props["margin_top"]; } 
-        std::string margin_bottom = "auto";
-        if(style.props.count("margin_bottom") != 0 && style.props["margin_bottom"] != "auto") 
+        if(style.props.count("margin_bottom") != 0 && style.props["margin_bottom"] != AUTO) 
             { margin_bottom = style.props["margin_bottom"]; } 
 
 
@@ -102,6 +159,7 @@ public:
     void block_layout() {
         block_calc_width();
         calc_vertical_margins();
+        calc_horizontal_margins();
         block_lay_children();
         block_calc_position();
         block_calc_height();

@@ -1,0 +1,218 @@
+#include <stdio.h>
+#include <time.h>
+
+#include <vector>
+#include <string>
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+
+#include "../engine/dom/node.hpp"
+#include "../engine/dom/text.hpp"
+#include "../engine/dom/element.hpp"
+#include "../engine/style/style_node.hpp"
+#include "../engine/layout/layout_node.hpp"
+#include "../engine/render/display_buffer.hpp"
+
+#include "../globals.h"
+
+#include "card.hpp"
+#include "utils.hpp"
+
+// namespaces
+
+// globals
+static SDL_Window* window;
+static SDL_Renderer* renderer;
+static SDL_Event event;
+static TTF_Font* font;
+
+
+// init
+void init() {
+    Globals::set_window_sizing(600,400);
+    SDL_Init(SDL_INIT_EVERYTHING);
+    TTF_Init();
+
+    Globals::load_font("font/SpaceMono-Regular.ttf");
+
+    window = SDL_CreateWindow(
+                        "Domes",
+                        SDL_WINDOWPOS_CENTERED, 
+                        SDL_WINDOWPOS_CENTERED, 
+                        Globals::width, Globals::height, 0);
+    renderer = SDL_CreateRenderer(window, -1, 0);    
+
+
+    Globals::renderer = renderer;
+}
+// quit
+void quit() {
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+
+
+    Globals::memory_free();
+
+    TTF_Quit();
+    SDL_Quit();
+
+}
+
+
+
+void prop_tree_print(LayoutNode* layout_root,int depth = 0) {
+    auto prop_print = [](int depth = 0,LayoutNode* lr) {
+        printf("%*s%s x: %d y: %d w: %d h: %d\n",depth * 4,"",lr->style_node->dom_node->id.c_str(),lr->box.rect.x,lr->box.rect.y,lr->box.rect.w,lr->box.rect.h);
+    };
+
+    if(depth == 0) {
+        prop_print(depth,layout_root);
+        depth++;
+    }
+    for (size_t i = 0; i < layout_root->nodes.size(); i++) {
+        prop_print(depth,layout_root->nodes[i]);
+        prop_tree_print(layout_root->nodes[i], depth + 1);
+    }
+    
+}
+
+void say_my_name() {
+    printf("say my name\n");
+}
+
+int main() {
+    init();
+
+
+
+
+    Element root("app");
+    root.style.props["width"] = std::to_string(Globals::width).c_str();
+
+    setStyle(
+        root,
+        "color : 0,0,0,255;"
+        "margin_top : 0;"
+        "margin_bottom : 0;"
+    );
+
+    Text logo_text("DoMe");
+    setStyle(
+        logo_text,
+        "display : " DisplayInline ";"
+        "color : 255,0,0,255;"
+        "margin_left :   10;"
+        "margin_right :  230;"
+        "margin_bottom : 20;"
+    ); 
+
+    Text date_text(get_date_str());
+    setStyle(
+        date_text,
+        "display:" DisplayInline ";"
+        "color: 255,0,0,255;"   
+        "margin_right: 20;"   
+    );
+
+    Text time_text(get_time_str());
+    setStyle(
+        time_text,
+        "display: " DisplayInline ";"
+        "color: 255,0,0,255"
+    );
+
+    Element to_do_element("to_do_element");
+    setStyle(
+        to_do_element,
+        "height : 5;"
+        "margin_left  : 20;"
+        "margin_right : 20;"
+    );
+
+
+    std::vector<Card> todos;
+    root.children.push_back(&logo_text);
+    root.children.push_back(&date_text);
+    root.children.push_back(&time_text);
+
+
+
+    for (size_t i = 0; i < 10; i++) {
+        todos.push_back(Card());
+    }
+    for (size_t i = 0; i < 10; i++) {
+        root.children.push_back(&todos[i]);
+    }
+
+    todos[0].onClickCallback = say_my_name;
+
+    StyleNode style_tree;
+    style_tree.build_tree(&root);
+
+    LayoutNode layout_tree;
+    layout_tree.build_tree(&style_tree);
+    layout_tree.lay_it_out();
+
+
+
+
+    DisplayBuffer buffer;
+    buffer.build_buffer(&layout_tree);
+
+
+    bool done = false;
+    while (!done)
+    {
+        while (SDL_PollEvent(&event))
+        {
+            switch (event.type) {
+            case SDL_QUIT: done = true; break;
+            case SDL_KEYDOWN:
+            {
+                if(event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+                    done = true;
+                }
+            }
+            break;
+            case SDL_MOUSEBUTTONDOWN:
+                layout_tree.fire_event((Event::Event) {
+                    .type = Event::MouseEvent,
+                    .type_state = Event::MouseDown,
+                    .x = event.button.x,
+                    .y = event.button.y,
+                    .button = event.button.button,
+                });
+            break;
+            default:
+                break;
+            }
+        }
+
+        // int x , y;
+        // SDL_GetMouseState(&x,&y);
+        // printf("%d %d\n",x,y);
+
+        // update
+        time_text.text = get_time_str();
+        buffer.build_buffer(&layout_tree);
+
+
+        // render
+        SDL_SetRenderDrawColor(renderer, hex_to_color(0x000000));
+        SDL_RenderClear(renderer);
+
+
+        buffer.render(renderer);
+
+        SDL_RenderPresent(renderer);
+    }
+
+
+    // free all
+    quit();
+
+    return 0;
+}
+
+
