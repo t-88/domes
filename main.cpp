@@ -126,8 +126,6 @@ void layout_tree_render(SDL_Renderer* renderer,LayoutNode lr) {
 int main() {
     init();
 
-
-
     Element root("app");
     root.style.props["width"] =  std::to_string(Globals::width);
     root.style.props["color"] = "0 0 0 255";
@@ -136,49 +134,50 @@ int main() {
 
 
     Text logo_text("DoMe");
+    logo_text.set_style("display", DisplayInline);
     logo_text.set_style("color","255 0 0 255");
-    logo_text.set_style("margin_top","10");
-    logo_text.set_style("margin_bottom","10");
+    logo_text.set_style("margin_left","10");
+    logo_text.set_style("margin_right","230");
+
 
     Text date_text(get_date_str());
+    date_text.set_style("display", DisplayInline);
     date_text.set_style("color","255 0 0 255");
+    date_text.set_style("margin_right","20");
 
 
     Text time_text(get_time_str());
+    time_text.set_style("display", DisplayInline);
     time_text.set_style("color","255 0 0 255");
 
 
+
+    Element to_do_element("to_do_element");
+    to_do_element.set_style("height","10");
 
 
     root.children.push_back(&logo_text);
     root.children.push_back(&date_text);
     root.children.push_back(&time_text);
+    root.children.push_back(&to_do_element);
 
 
 
-    printf("style tree:\n");
     StyleNode style_tree;
     style_tree.build_tree(&root);
-    style_tree_print(style_tree);
 
-    printf("\n");
-    printf("layout tree:\n");
     LayoutNode layout_tree;
     layout_tree.build_tree(&style_tree);
-    layout_tree_print(&layout_tree);
 
     layout_tree.lay_it_out();
 
 
-
-    printf("\n");
     prop_tree_print(&layout_tree);
 
 
 
     DisplayBuffer buffer;
     buffer.build_buffer(&layout_tree);
-    printf("%ld\n",buffer.buffer.size());
 
     bool done = false;
     while (!done)

@@ -15,6 +15,7 @@ typedef std::unordered_map<std::string,std::string> StyleProps;
 #define DisplayAnonymous "anonymous"
 
 #define AUTO "auto"
+#define ZERO "0"
 
 
 
