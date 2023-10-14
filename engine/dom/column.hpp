@@ -28,8 +28,13 @@ public:
 
 
     void scroll_y(int y) {
-        if(offset_y + y > 0) { return; }
-        if(-y - offset_y  > children_h) { return; }
+        // going down
+        if(y < 0) {
+            if(-y - offset_y  > children_h) { return; }
+        } else {
+    
+            if(offset_y + y > 0) { return; }
+        }
 
 
         offset_y += y;

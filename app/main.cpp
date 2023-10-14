@@ -66,44 +66,36 @@ void quit() {
 
 
 
-void prop_tree_print(LayoutNode* layout_root,int depth = 0) {
-    auto prop_print = [](int depth = 0,LayoutNode* lr) {
-        printf("%*s%s x: %d y: %d w: %d h: %d\n",depth * 4,"",lr->node->id.c_str(),lr->box.rect.x,lr->box.rect.y,lr->box.rect.w,lr->box.rect.h);
-    };
 
-    if(depth == 0) {
-        prop_print(depth,layout_root);
-        depth++;
+static Column todo_container;
+static int idx = 0; 
+
+
+void onRemoveTodo(void* userdata) {
+    int idx = userdata_to(int,userdata);
+    int i = 0;
+    for (i = 0; i < todo_container.children.size(); i++) {
+        if(((Card*)todo_container.children[i])->uid == idx) {
+            break;
+        }
     }
-    for (size_t i = 0; i < layout_root->nodes.size(); i++) {
-        prop_print(depth,layout_root->nodes[i]);
-        prop_tree_print(layout_root->nodes[i], depth + 1);
-    }
-    
-}
-
-void logo() {
-    printf("logo\n");
-}
-void todo() {
-    printf("todo\n");
-}
-
-void onRemoveTodo(void* index) {
-    printf("removing %d\n",userdata_to(int,index));
-
+    delete todo_container.children[i];
+    todo_container.children.erase(todo_container.children.begin() + i);
 }
 void onFinishTodo(void* index) {
     printf("todo %d is finished\n",userdata_to(int,index));
 }
 
 
-Column todo_container;
+
 
 void onScroll(Event::Event event) {
-    todo_container.scroll_y(event.scroll_dir_y * 10);
+    todo_container.scroll_y(event.scroll_dir_y * 25);
 }
-
+void addTodo(void* userdata) {
+    todo_container.push(new Card(idx));
+    idx++;
+}
 
 int main() {
     init();
@@ -154,31 +146,33 @@ int main() {
     setStyle(
         todo_container,
         "color : 0,255,0,0;"
-        "height : 345;"
+        "height : 280;"
         "margin_bottom: 20;"
     );
     todo_container.onScrollCallback = onScroll;
 
-
-
-    for (size_t i = 0; i < 10; i++) {
-        todo_container.push(new Card(i));
-    }
     root.push(&todo_container);
+
+    Element add_btn("add-btn");
+    setStyle(
+        add_btn,
+        "width :  30;"
+        "height : 30;"
+        "color : 255,0,0,255;"
+    );
+    add_btn.onClickCallback = addTodo;
+    root.push(&add_btn);
 
 
 
 
 
     LayoutNode layout_tree(&root);
-    layout_tree.build_tree();
-    layout_tree.lay_it_out();
-
+    layout_tree.is_root = true;
 
 
 
     DisplayBuffer buffer;
-    buffer.build_buffer(&layout_tree);
 
 
 
@@ -233,15 +227,24 @@ int main() {
         }
 
 
+
         // update
+        layout_tree.clear();
+        layout_tree.build_tree();
+        layout_tree.lay_it_out();
         time_text.text = get_time_str();
         buffer.build_buffer(&layout_tree);
+        
+
+
 
 
         // render
         SDL_SetRenderDrawColor(renderer, hex_to_color(0x000000));
         SDL_RenderClear(renderer);
         buffer.render(renderer);
+
+
 
 
         SDL_RenderPresent(renderer);

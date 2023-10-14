@@ -7,6 +7,7 @@
 #include "./box.hpp"
 
 #include "../events/event.hpp"
+#include "../dom/column.hpp"
 
 const static int LAYOUT_TREE_PRINT_DEPTH_SPACING = 2;
 #define UNINITIALIZED_DISPLAY "un-init-display"
@@ -26,13 +27,27 @@ public:
     std::string display_box = DisplayBlock;
     Box box;
 
+    bool is_root = false;
 
-    LayoutNode(){}
+    LayoutNode(){
+
+    }
     LayoutNode(Node* _node) {
         display_box = _node->style->props["display"];
         node = _node;
     }
 
+
+
+    void clear() {
+        for (size_t i = 0; i < nodes.size(); i++)
+            nodes[i]->clear();
+        if(!is_root) {
+            delete this;
+        } else {
+            nodes.clear();
+        }
+    }
 
     void fire_event(Event::Event event) {
         switch (event.type)
@@ -141,7 +156,6 @@ public:
         if(style.props.count("margin_right") != 0 && style.props["margin_right"] != "auto") 
             { margin_right = style.props["margin_right"]; } 
 
-
         box.margin.left =  to_px(margin_left);
         box.margin.right = to_px(margin_right);
     }
@@ -241,8 +255,8 @@ public:
             nodes[i]->lay_it_out();
             box.rect.h += nodes[i]->box.get_margin_rect().h;
         }
-        if(node->type == "column") {
-            ((Column*)node)->children_h = box.rect.h - nodes[nodes.size() - 1]->box.get_margin_rect().h;
+        if(nodes.size() && node->type == "column") {
+            ((Column*)node)->children_h = box.rect.h;
         }
 
     }
@@ -397,5 +411,22 @@ static void travese_layout_tree(LayoutNode* root) {
 
 
 
+
+
+void prop_tree_print(LayoutNode* layout_root,int depth = 0) {
+    auto prop_print = [](int depth = 0,LayoutNode* lr) {
+        printf("%*s%s x: %d y: %d w: %d h: %d\n",depth * 4,"",lr->node->id.c_str(),lr->box.rect.x,lr->box.rect.y,lr->box.rect.w,lr->box.rect.h);
+    };
+
+    if(depth == 0) {
+        prop_print(depth,layout_root);
+        depth++;
+    }
+    for (size_t i = 0; i < layout_root->nodes.size(); i++) {
+        prop_print(depth,layout_root->nodes[i]);
+        prop_tree_print(layout_root->nodes[i], depth + 1);
+    }
+    
+}
 
 #endif //ENGINE_LAYOUT_NODE_H
