@@ -3,13 +3,13 @@
 
 #include <vector>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <assert.h>
 
 
 #include "SDL2/SDL.h"
 
-typedef std::unordered_map<std::string,std::string> StyleProps; 
+typedef std::map<std::string,std::string> StyleProps; 
 
 #define DisplayBlock "block"
 #define DisplayInline "inline"
@@ -30,11 +30,8 @@ public:
 
 
     Style(){
+        props.clear();
         default_style();
-    }
-    Style(StyleProps p){
-        default_style();
-        props = p;
     }
     ~Style() { }
 
@@ -46,24 +43,25 @@ public:
         props["width"] = AUTO;
         props["height"] = AUTO;
         
-        props["margin_left"] = AUTO;
-        props["margin_right"] = AUTO;
+        props["margin_left"] = ZERO;
+        props["margin_right"] = ZERO;
     
-        props["padding_left"] = AUTO;
-        props["padding_right"] = AUTO;
+        props["padding_left"] = ZERO;
+        props["padding_right"] = ZERO;
 
 
         props["color"] = "255,255,255,255";
-        props["margin_color"] = "0,0,0,255";
+        props["margin_color"] = "0,0,0,0";
     }
     void print() {
-        for(auto& prop : props) {
-            printf("%s %s ",prop.first.c_str(),prop.second.c_str());
+        printf("style start:\n");
+        for (auto& it : props) {
+            printf("    %s : %s\n",it.first.c_str(),it.second.c_str());
         }
-        printf("\n");
+        printf("style end;\n");
 
+        
     }
-
     
     void parse_style() {
         int cur_idx = 0; 
@@ -100,7 +98,11 @@ int to_px(std::string in) {
 }
 
 SDL_Color to_color(std::string in) {
+    //TODO: why is color = ""
     assert(in != "" && "empty string!!");
+
+    // if(in == "") return;
+
 
     // printf("    in = %s\n",in.c_str());
     in.push_back(',');

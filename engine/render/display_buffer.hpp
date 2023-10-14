@@ -8,6 +8,7 @@
 #include "./r_node.hpp"
 #include "./r_rect.hpp"
 #include "./r_text.hpp"
+#include "./r_container.hpp"
 
 class DisplayBuffer {
 public:
@@ -18,24 +19,42 @@ public:
     ~DisplayBuffer() {}
 
 
-    void build_buffer(LayoutNode* lr) {
+    void build_buffer(LayoutNode* lr,Rect* rect = nullptr,int offset_y = 0) {
         if(!lr) return;
+        if(lr->display_box == DisplayAnonymous) {
+            for (size_t i = 0; i < lr->nodes.size(); i++) {
+                build_buffer(lr->nodes[i],rect,offset_y);
+            }                
+            return;
+        };
 
-        std::string node_type = lr->style_node->dom_node->type; 
-        if(node_type == "element") {
-            buffer.push_back((RNode*) (new RRect(lr)));
-        } else if(node_type == "text") {
-            buffer.push_back((RNode*) (new RText(lr)));
-        } else {
-            buffer.push_back((RNode*) (new RRect(lr)));
-            // printf("%s\n",node_type.c_str());
-            // assert(false && "Unreachable!!");
+        
+
+        std::string node_type = lr->node->type; 
+    
+        if(node_type == "text") {
+            buffer.push_back((RNode*) (new RText(lr,rect,offset_y)));
+        } 
+        
+        else if (node_type == "column") {
+            buffer.push_back((RNode*) (new RRect(lr,rect,offset_y)));
+
+            for (size_t i = 0; i < lr->nodes.size(); i++) {
+                build_buffer(lr->nodes[i],&lr->box.rect,lr->node->offset_y);
+            }                
+        } 
+        
+        else {
+            buffer.push_back((RNode*) (new RRect(lr,rect,offset_y)));
+            for (size_t i = 0; i < lr->nodes.size(); i++) {
+                build_buffer(lr->nodes[i],rect,offset_y);
+            }                
         }
 
-        for (size_t i = 0; i < lr->nodes.size(); i++) {
-            build_buffer(lr->nodes[i]);
-        }
+
     }
+
+
 
 
     void render(SDL_Renderer* renderer) {

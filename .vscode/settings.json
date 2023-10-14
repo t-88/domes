@@ -82,7 +82,8 @@
         "__bit_reference": "cpp",
         "ios": "cpp",
         "filesystem": "cpp",
-        "__node_handle": "cpp"
+        "__node_handle": "cpp",
+        "__functional_03": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

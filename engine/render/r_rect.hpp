@@ -7,23 +7,9 @@
 class RRect : RNode {
 public:
 
-    RRect(LayoutNode* lnode): RNode(lnode) {}
+    RRect(LayoutNode* lnode,Rect* _p_rect = nullptr,int _offset_y = 0): RNode(lnode,_p_rect,_offset_y) {}
     ~RRect() {}
 
-
-    void render(SDL_Renderer* renderer) override {
-        SDL_Rect main_rect = (SDL_Rect) lnode->box.get_rect();
-        SDL_Rect margin_rect = (SDL_Rect) lnode->box.get_margin_rect();
-
-        auto margin_color = to_color(lnode->style_node->dom_node->style.props["margin_color"]);
-        SDL_SetRenderDrawColor(renderer,margin_color.r,margin_color.g,margin_color.b,margin_color.a);
-        SDL_RenderFillRect(renderer,&margin_rect);
-
-
-        auto main_color = to_color(lnode->style_node->dom_node->style.props["color"]);
-        SDL_SetRenderDrawColor(renderer,main_color.r,main_color.g,main_color.b,main_color.a);
-        SDL_RenderFillRect(renderer,&main_rect);
-    }
 
 };
 

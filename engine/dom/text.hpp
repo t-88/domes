@@ -27,11 +27,11 @@ public:
 
         char out_height[128];
         sprintf(out_height,"%d",Globals::font_height);
-        style.props["height"] = out_height;
+        style->props["height"] = out_height;
 
         char out_width[128];
         sprintf(out_width,"%ld",Globals::font_width * t.size());
-        style.props["width"] = out_width;
+        style->props["width"] = out_width;
     }
 
     ~Text(){}

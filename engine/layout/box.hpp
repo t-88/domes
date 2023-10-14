@@ -13,7 +13,8 @@ public:
     Edge margin;
 
 
-    Box() {}
+    Box() {
+    }
     ~Box() {}
 
 

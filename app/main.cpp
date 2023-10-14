@@ -10,14 +10,19 @@
 #include "../engine/dom/node.hpp"
 #include "../engine/dom/text.hpp"
 #include "../engine/dom/element.hpp"
+#include "../engine/dom/column.hpp"
+
 #include "../engine/style/style_node.hpp"
 #include "../engine/layout/layout_node.hpp"
 #include "../engine/render/display_buffer.hpp"
+#include "../engine/events/event.hpp"
 
 #include "../globals.h"
 
 #include "card.hpp"
 #include "utils.hpp"
+#include "state.hpp"
+
 
 // namespaces
 
@@ -63,7 +68,7 @@ void quit() {
 
 void prop_tree_print(LayoutNode* layout_root,int depth = 0) {
     auto prop_print = [](int depth = 0,LayoutNode* lr) {
-        printf("%*s%s x: %d y: %d w: %d h: %d\n",depth * 4,"",lr->style_node->dom_node->id.c_str(),lr->box.rect.x,lr->box.rect.y,lr->box.rect.w,lr->box.rect.h);
+        printf("%*s%s x: %d y: %d w: %d h: %d\n",depth * 4,"",lr->node->id.c_str(),lr->box.rect.x,lr->box.rect.y,lr->box.rect.w,lr->box.rect.h);
     };
 
     if(depth == 0) {
@@ -77,19 +82,37 @@ void prop_tree_print(LayoutNode* layout_root,int depth = 0) {
     
 }
 
-void say_my_name() {
-    printf("say my name\n");
+void logo() {
+    printf("logo\n");
 }
+void todo() {
+    printf("todo\n");
+}
+
+void onRemoveTodo(void* index) {
+    printf("removing %d\n",userdata_to(int,index));
+
+}
+void onFinishTodo(void* index) {
+    printf("todo %d is finished\n",userdata_to(int,index));
+}
+
+
+Column todo_container;
+
+void onScroll(Event::Event event) {
+    todo_container.scroll_y(event.scroll_dir_y * 10);
+}
+
 
 int main() {
     init();
 
-
-
+    onRemoveTodoCallback = onRemoveTodo;
+    onFinishTodoCallback = onFinishTodo;
 
     Element root("app");
-    root.style.props["width"] = std::to_string(Globals::width).c_str();
-
+    root.style->props["width"] = std::to_string(Globals::width).c_str();
     setStyle(
         root,
         "color : 0,0,0,255;"
@@ -122,36 +145,33 @@ int main() {
         "color: 255,0,0,255"
     );
 
-    Element to_do_element("to_do_element");
-    setStyle(
-        to_do_element,
-        "height : 5;"
-        "margin_left  : 20;"
-        "margin_right : 20;"
-    );
-
-
-    std::vector<Card> todos;
     root.children.push_back(&logo_text);
     root.children.push_back(&date_text);
     root.children.push_back(&time_text);
 
 
 
+    setStyle(
+        todo_container,
+        "color : 0,255,0,0;"
+        "height : 345;"
+        "margin_bottom: 20;"
+    );
+    todo_container.onScrollCallback = onScroll;
+
+
+
     for (size_t i = 0; i < 10; i++) {
-        todos.push_back(Card());
+        todo_container.push(new Card(i));
     }
-    for (size_t i = 0; i < 10; i++) {
-        root.children.push_back(&todos[i]);
-    }
+    root.push(&todo_container);
 
-    todos[0].onClickCallback = say_my_name;
 
-    StyleNode style_tree;
-    style_tree.build_tree(&root);
 
-    LayoutNode layout_tree;
-    layout_tree.build_tree(&style_tree);
+
+
+    LayoutNode layout_tree(&root);
+    layout_tree.build_tree();
     layout_tree.lay_it_out();
 
 
@@ -161,9 +181,22 @@ int main() {
     buffer.build_buffer(&layout_tree);
 
 
+
+    Uint32 start = SDL_GetTicks();
+    Uint32 end = start;
+    float dt;
+    float frame_rate = 1 / 60.f;
+
     bool done = false;
     while (!done)
     {
+        start = SDL_GetTicks();
+        dt = (start - end) / 1000.f;
+        if(frame_rate > dt) { continue; }
+        end = start;
+
+
+
         while (SDL_PollEvent(&event))
         {
             switch (event.type) {
@@ -177,11 +210,21 @@ int main() {
             break;
             case SDL_MOUSEBUTTONDOWN:
                 layout_tree.fire_event((Event::Event) {
-                    .type = Event::MouseEvent,
+                    .type = Event::MouseClickEvent,
                     .type_state = Event::MouseDown,
                     .x = event.button.x,
                     .y = event.button.y,
                     .button = event.button.button,
+                });
+            break;
+            case SDL_MOUSEWHEEL:
+                layout_tree.fire_event((Event::Event) {
+                    .type = Event::MouseScrollEvent,
+                    .type_state = Event::MouseDown,
+                    .x = event.wheel.mouseX,
+                    .y = event.wheel.mouseY,
+                    .scroll_dir_x = (int) event.wheel.preciseX,
+                    .scroll_dir_y = (int) event.wheel.preciseY,
                 });
             break;
             default:
@@ -189,9 +232,6 @@ int main() {
             }
         }
 
-        // int x , y;
-        // SDL_GetMouseState(&x,&y);
-        // printf("%d %d\n",x,y);
 
         // update
         time_text.text = get_time_str();
@@ -201,11 +241,12 @@ int main() {
         // render
         SDL_SetRenderDrawColor(renderer, hex_to_color(0x000000));
         SDL_RenderClear(renderer);
-
-
         buffer.render(renderer);
 
+
         SDL_RenderPresent(renderer);
+
+
     }
 
 

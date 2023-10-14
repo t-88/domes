@@ -1,6 +1,8 @@
 # Do-me
 making a todo app bc its what cool kids do this days and i want to be a cool kid.
-trying to implement a simple layout engine and apply it on a todo app :).    
+trying to implement a simple layout engine and apply it on a todo app :).        
+
+**is unsafe for u RAM**
 
 # DevImgs
 ## Block UI with text

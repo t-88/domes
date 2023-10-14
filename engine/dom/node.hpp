@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "../style/style.hpp"
+#include "../events/event.hpp"
 
 namespace NodeTypes {
     const int Text = 0;
@@ -16,29 +17,52 @@ class Node
 {
 
 public:
-    std::vector<Node*> children;
+    std::vector<Node*> children = {};
     NodeType node_type;
-    Style style;
+    Style* style;
 
     std::string id = "node";
     std::string type = "node";
 
+    int offset_x = 0;
+    int offset_y = 0;
 
-    void (*onClickCallback)() = nullptr;
+    void* userdata = nullptr;
+    void (*onClickCallback)(void* userdata) = nullptr;
+    void (*onScrollCallback)(Event::Event event) = nullptr;
 
 
-    Node(){}
-    Node(NodeType t) : node_type(t) { }
-    ~Node(){}
+    bool scrollable = false;
+    bool overflow = true;
+
+    Node(){
+        style = new Style();
+    }
+    Node(NodeType t) : node_type(t) { 
+        style = new Style();
+    }
+    ~Node(){
+    }
 
     void set_style(std::string ident,std::string value) {
-        style.props[ident] = value;
+        style->props[ident] = value;
     }
 
     void onClick() {
         if(!onClickCallback) return;
-        onClickCallback();
+        onClickCallback(userdata);
     }
+    void onScroll(Event::Event event) {
+        if(!onScrollCallback) return;
+
+        onScrollCallback(event);
+    }
+
+
+    void push(Node* node) {
+        children.push_back(node);
+    }
+
 };
 
 

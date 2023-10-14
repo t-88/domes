@@ -3,10 +3,10 @@
 
 #include <vector>
 #include <assert.h>
-#include "../style/style_node.hpp"
 #include "../dom/node.hpp"
 #include "./box.hpp"
 
+#include "../events/event.hpp"
 
 const static int LAYOUT_TREE_PRINT_DEPTH_SPACING = 2;
 #define UNINITIALIZED_DISPLAY "un-init-display"
@@ -17,58 +17,36 @@ static void travese_layout_tree(LayoutNode* root);
 
 
 
-namespace Event {
-    typedef enum EventType {
-        MouseEvent
-    } EventType;
-
-    typedef enum EventTypeState {
-        MouseDown,
-        MouseUp,
-    } EventTypeState;
-
-
-    typedef struct Event {
-        EventType type;
-        EventTypeState type_state;
-
-        int x , y;
-        int button;
-    } Event;
-}
-
-
-
 class LayoutNode {
 public:
     std::vector<LayoutNode*> nodes;
     LayoutNode* parent = nullptr;
-    StyleNode* style_node;
+    Node* node = nullptr;
 
     std::string display_box = DisplayBlock;
     Box box;
 
 
     LayoutNode(){}
-    LayoutNode(StyleNode* sn) : style_node(sn) {
-        display_box = sn->dom_node->style.props["display"];
+    LayoutNode(Node* _node) {
+        display_box = _node->style->props["display"];
+        node = _node;
     }
-
 
 
     void fire_event(Event::Event event) {
         switch (event.type)
         {
-            case Event::MouseEvent: 
+            case Event::MouseClickEvent: 
                 switch (event.type_state)
                 {
                     case Event::MouseDown: 
-                        onClick(event.button,event.x,event.y);
+                        onClick(event);
                     break;
-
-                    default:
-                        break;
                 }
+            break;
+            case Event::MouseScrollEvent:
+                onScroll(event);
             break;
 
             default:
@@ -78,40 +56,51 @@ public:
     }
 
 
-    void traverse_onClick(int button,int x , int y) {
+    void traverse_onClick(Event::Event event,int offset = 0) {
         for (size_t i = 0; i < nodes.size(); i++) {
-            nodes[i]->onClick(button,x,y);
+            nodes[i]->onClick(event,offset);
         }
     }
-    void onClick(int button,int x , int y) {
-        if(box.collide(x,y)) {
-            style_node->dom_node->onClick();
-            traverse_onClick(button,x,y);
+    void onClick(Event::Event event,int offset_y = 0) {
+        if(box.collide(event.x ,event.y - offset_y)) {
+            node->onClick();
+            traverse_onClick(event,node->offset_y + offset_y);
         }
     }
-    
+
+
+    void traverse_onScroll(Event::Event event) {
+
+    }
+    void onScroll(Event::Event event) {
+        if(box.collide(event.x,event.y)) {
+            if(node->scrollable) {
+                node->onScroll(event);
+            }
+            for (size_t i = 0; i < nodes.size(); i++) {
+                nodes[i]->onScroll(event);
+            }            
+        }
+
+    } 
     
 
     void append(LayoutNode* ln) {
         ln->parent = this;
         nodes.push_back(ln);
     }
-    void build_tree(StyleNode* style_root) {
-        style_node = style_root;
-        display_box = style_root->dom_node->style.props["display"];
+    void build_tree() {
+        assert(node && "layout node is not given\n");
         travese_layout_tree(this);
     }
 
-
     void lay_it_out() {
         if(parent == nullptr) {
-            box.rect.w = to_px(style_node->dom_node->style.props["width"]);
-            box.rect.h = to_px(style_node->dom_node->style.props["height"]);
+            box.rect.w = to_px(node->style->props["width"]);
+            box.rect.h = to_px(node->style->props["height"]);
             // height can be the same as the children but the width depends on the total width of the screen 
             assert((box.rect.w != 0) && "root width is not given");
         }
-
-        
         if(display_box == DisplayBlock) {
             block_layout();
         } else if(display_box == DisplayAnonymous){
@@ -119,13 +108,16 @@ public:
         } else {
             inline_layout();
         }
+
     }
 
     void calc_vertical_margins() {
-        auto style = style_node->dom_node->style;
+        Style style = *node->style;
+
 
         std::string margin_bottom = AUTO;
         std::string margin_top = AUTO;
+
 
         if(style.props.count("margin_top") != 0 && style.props["margin_top"] != AUTO) 
             { margin_top = style.props["margin_top"]; } 
@@ -137,7 +129,7 @@ public:
         box.margin.bottom = to_px(margin_bottom);
     }
     void calc_horizontal_margins() {
-        auto style = style_node->dom_node->style;
+        Style style = *node->style;
 
         std::string width = AUTO;
         std::string margin_left = AUTO;
@@ -160,45 +152,47 @@ public:
         block_calc_width();
         calc_vertical_margins();
         calc_horizontal_margins();
-        block_lay_children();
         block_calc_position();
+        block_lay_children();
         block_calc_height();
     }
     void block_calc_width() {
-        Box parent_box = box;
-        if(parent != nullptr) { 
-            parent_box = parent->box;
-        } 
+        Style style = *node->style;
 
-        auto style = style_node->dom_node->style;
+        std::string width = AUTO;
+        std::string margin_left = AUTO;
+        std::string margin_right = AUTO;
 
-        std::string width = "auto";
-        if(style.props.count("width") != 0 && style.props["width"] != "auto") { width = style.props["width"]; } 
-
-        std::string margin_left = "auto";
-        if(style.props.count("margin_left") != 0 && style.props["margin_left"] != "auto") 
-            { margin_left = style.props["margin_left"]; } 
-        std::string margin_right = "auto";
-        if(style.props.count("margin_right") != 0 && style.props["margin_right"] != "auto") 
-            { margin_right = style.props["margin_right"]; } 
+        if(style.props.count("width") && style.props["width"] != AUTO) 
+            width = style.props["width"]; 
+        if(style.props.count("margin_left") && style.props["margin_left"] != AUTO) 
+            margin_left = style.props["margin_left"]; 
+        if(style.props.count("margin_right") && style.props["margin_right"] != AUTO) 
+            margin_right = style.props["margin_right"]; 
+        
+        
 
 
-    
+
         int sum = to_px(margin_left) + to_px(margin_right) + to_px(width);
 
-        if(width != "auto" && sum > parent_box.rect.w) {
-            if(margin_left == "auto") margin_left = "0";
-            if(margin_right == "auto") margin_right = "0";
+        Box parent_box = box;
+        if(parent != nullptr) 
+            parent_box = parent->box; 
+
+        if(width != AUTO && sum > parent_box.rect.w) {
+            if(margin_left == AUTO) margin_left = "0";
+            if(margin_right == AUTO) margin_right = "0";
         }
 
         int underflow = parent_box.rect.w - sum;
 
-        int state  = (((width == "auto") ? 1 : 0) << 2) | 
-                     (((margin_left == "auto") ? 1 : 0) << 1) | (((width == "auto") ? 1 : 0) << 0);
+        int state  = (((width == AUTO) ? 1 : 0) << 2) | 
+                     (((margin_left == AUTO) ? 1 : 0) << 1) | (((width == AUTO) ? 1 : 0) << 0);
 
         if(state >= 0x004) {
-            if(margin_left == "auto") margin_left = ZERO;
-            if(margin_right == "auto") margin_right = ZERO;
+            if(margin_left == AUTO) margin_left = ZERO;
+            if(margin_right == AUTO) margin_right = ZERO;
 
             if(underflow >= 0) {
                 width = std::to_string(underflow);
@@ -228,51 +222,66 @@ public:
         }
 
 
-        style_node->dom_node->style.props["width"] = width;
-        style_node->dom_node->style.props["margin_left"] = margin_left;
-        style_node->dom_node->style.props["margin_right"] = margin_right;
+        node->style->props["width"] = width;
+        node->style->props["margin_left"] = margin_left;
+        node->style->props["margin_right"] = margin_right;
         box.rect.w = to_px(width);
     }
     void block_calc_position() { 
         Box containg_box = parent ? parent->box : Box();
-        box.rect.x = containg_box.rect.x + box.margin.left + box.padding.left; 
-        box.rect.y = containg_box.rect.h + containg_box.rect.y + box.margin.top + box.padding.top; 
+
+
+        box.rect.x = containg_box.rect.x + box.margin.left; 
+        box.rect.y = containg_box.rect.y + containg_box.rect.h + box.margin.top;
+
     }
     void block_lay_children() {
-        box.rect.h = box.get_margin_rect().h;
+        box.rect.h = 0;
         for (size_t i = 0; i < nodes.size(); i++){
             nodes[i]->lay_it_out();
             box.rect.h += nodes[i]->box.get_margin_rect().h;
         }
-        
+        if(node->type == "column") {
+            ((Column*)node)->children_h = box.rect.h - nodes[nodes.size() - 1]->box.get_margin_rect().h;
+        }
+
     }
     void block_calc_height() {
-        auto style = style_node->dom_node->style;
+        Style style = *node->style;
+
+
         if(style.props.count("height") != 0 && style.props["height"] != "auto") { 
             box.rect.h = to_px(style.props["height"]); 
-        } 
-    }
+        
+        
+            if(node->type == "column") {
+                ((Column*)node)->children_h -= box.rect.h - box.margin.bottom;
+            }
 
+        } 
+    } 
 
     // anonymous layout
     void anonymous_layout() {
         anonymous_calc_width();
+        block_calc_position();
+
         anonymous_lay_children();
     }
     void anonymous_calc_width() {
         if(parent) {
-            style_node->dom_node->style.props["width"] = std::to_string(parent->box.rect.w);
+            node->style->props["width"] = std::to_string(parent->box.rect.w);
         } else {
-            style_node->dom_node->style.props["width"] = Globals::width;
+            node->style->props["width"] = Globals::width;
         }
 
-        style_node->dom_node->style.props["margin_left"] = ZERO;
-        style_node->dom_node->style.props["margin_right"] = ZERO;
-        box.rect.w = to_px(style_node->dom_node->style.props["width"]);
+        node->style->props["margin_left"] = ZERO;
+        node->style->props["margin_right"] = ZERO;
+        box.rect.w = to_px(node->style->props["width"]);
     }
     void anonymous_lay_children() {
         int max_height = -1;
-        box.rect.x = 0;
+
         for (size_t i = 0; i < nodes.size(); i++) {
             nodes[i]->lay_it_out();
             box.rect.x += nodes[i]->box.get_margin_rect().w; 
@@ -281,6 +290,7 @@ public:
                 max_height = nodes[i]->box.get_margin_rect().h;
             } 
         }
+        box.rect.x = 0;
         box.rect.h = max_height;
     }
 
@@ -293,10 +303,10 @@ public:
         block_lay_children();
         block_calc_position();
         block_calc_height();
-
     }
+
     void inline_calc_width() {
-        auto style = style_node->dom_node->style;
+        Style style = *node->style;
         std::string width = AUTO;
         std::string margin_left =  ZERO;
         std::string margin_right = ZERO;
@@ -327,38 +337,36 @@ public:
             }
         }
     
-        style_node->dom_node->style.props["width"] = width;
-        style_node->dom_node->style.props["margin_left"] = margin_left;
-        style_node->dom_node->style.props["margin_right"] = margin_right;
+        node->style->props["width"] = width;
+        node->style->props["margin_left"] = margin_left;
+        node->style->props["margin_right"] = margin_right;
+
+
         box.rect.w = to_px(width);
     }
-
-    
 };
 
 
 
 static void travese_layout_tree(LayoutNode* root) { 
-    auto style_root = root->style_node;
+    auto node = root->node;
 
 
     LayoutNode* annoymous_layout;
+    
 
     bool found_prev_inline = false;
-    for (size_t i = 0; i < style_root->nodes.size(); i++) {
+    for (size_t i = 0; i < node->children.size(); i++) {
+        LayoutNode* lnp = new LayoutNode(node->children[i]);
 
+        if(node->children[i]->style->props["display"] == DisplayInline) {
 
-        LayoutNode* lnp = new LayoutNode(&style_root->nodes[i]);
-
-        if(style_root->nodes[i].dom_node->style.props["display"] == DisplayInline) {
             if(!found_prev_inline) {
                 found_prev_inline = true;
 
                 auto element = new Element("hidden-container");
-                element->set_style("color","0 0 0 0");
-                auto element_style = new StyleNode(element);
 
-                annoymous_layout = new LayoutNode(element_style);
+                annoymous_layout = new LayoutNode(element);
                 annoymous_layout->display_box = DisplayAnonymous;
             }
 
