@@ -24,8 +24,6 @@ public:
         type = "todo";
         id = "todo";
         uid = _uid;
-        printf("    %d\n",uid);
-
 
         setStyle(
             *this,

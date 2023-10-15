@@ -8,6 +8,7 @@ trying to implement a simple layout engine and apply it on a todo app :).
 ## Block UI with text
 ![text in blocks](dev-imgs/first.png)
 ![container](dev-imgs/column_container.gif)
+![input](dev-imgs/Peek%202023-10-15%2022-45.gif)
 
 # Links
 -   [Let's build a browser engine!](https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html)

@@ -13,6 +13,7 @@ public:
     SDL_Rect main_rect;
     SDL_Rect margin_rect;
     SDL_Color margin_color;
+    SDL_Color border_color;
     SDL_Color main_color;
 
     bool re_render = true;
@@ -40,6 +41,7 @@ public:
         auto props = lnode->node->style->props;
         main_color = to_color(lnode->node->style->props["color"]);
         margin_color = to_color(lnode->node->style->props["margin_color"]);
+        border_color = to_color(lnode->node->style->props["border_color"]);
 
 
 
@@ -88,6 +90,10 @@ public:
         if(main_color.a != 0) {
             SDL_SetRenderDrawColor(renderer,main_color.r,main_color.g,main_color.b,main_color.a);
             SDL_RenderFillRect(renderer,&main_rect);
+        }
+        if(border_color.a != 0) {
+            SDL_SetRenderDrawColor(renderer,border_color.r,border_color.g,border_color.b,border_color.a);
+            SDL_RenderDrawRect(renderer,&main_rect);
         }
     }
 };

@@ -21,7 +21,12 @@ public:
     }
 
     Text(std::string t) : Node(NodeTypes::Text) {
-        text = t;
+        update_text(t);
+    }
+
+
+    void update_text(std::string new_text) {
+        text = new_text;
         id = "text";
         type = "text";
 
@@ -30,10 +35,9 @@ public:
         style->props["height"] = out_height;
 
         char out_width[128];
-        sprintf(out_width,"%ld",Globals::font_width * t.size());
+        sprintf(out_width,"%ld",Globals::font_width * new_text.size());
         style->props["width"] = out_width;
-    }
-
+    } 
     ~Text(){}
 };
 

@@ -52,6 +52,8 @@ public:
 
         props["color"] = "255,255,255,255";
         props["margin_color"] = "0,0,0,0";
+        props["border_color"] = "0,0,0,0";
+        
     }
     void print() {
         printf("style start:\n");

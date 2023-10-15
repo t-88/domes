@@ -12,8 +12,7 @@
 
 
 
-#define setStyle(node,src)  (node).style->style_src = src; \
-                            (node).style->parse_style();
+
 #define userdata_to(type,value) (*((type*)(value)))
 
 static time_t cur_time;

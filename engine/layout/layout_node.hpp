@@ -63,6 +63,9 @@ public:
             case Event::MouseScrollEvent:
                 onScroll(event);
             break;
+            case Event::KeyPressEvent:
+                onKeyPress(event);
+            break;
 
             default:
                 break;
@@ -71,21 +74,18 @@ public:
     }
 
 
-    void traverse_onClick(Event::Event event,int offset = 0) {
-        for (size_t i = 0; i < nodes.size(); i++) {
-            nodes[i]->onClick(event,offset);
-        }
-    }
     void onClick(Event::Event event,int offset_y = 0) {
         if(box.collide(event.x ,event.y - offset_y)) {
             node->onClick();
-            traverse_onClick(event,node->offset_y + offset_y);
+            for (size_t i = 0; i < nodes.size(); i++) {
+                nodes[i]->onClick(event,node->offset_y + offset_y);
+            }
+        } else {
+            node->onClickOut();
+            for (size_t i = 0; i < nodes.size(); i++) {
+                nodes[i]->onClick(event,node->offset_y + offset_y);
+            }
         }
-    }
-
-
-    void traverse_onScroll(Event::Event event) {
-
     }
     void onScroll(Event::Event event) {
         if(box.collide(event.x,event.y)) {
@@ -96,9 +96,13 @@ public:
                 nodes[i]->onScroll(event);
             }            
         }
-
     } 
-    
+    void onKeyPress(Event::Event event) {
+        node->onKeyPress(event);
+        for (size_t i = 0; i < nodes.size(); i++) {
+            nodes[i]->onKeyPress(event);
+        }            
+    }
 
     void append(LayoutNode* ln) {
         ln->parent = this;
@@ -314,8 +318,9 @@ public:
         inline_calc_width();
         calc_vertical_margins();
         calc_horizontal_margins();
-        block_lay_children();
         block_calc_position();
+
+        block_lay_children();
         block_calc_height();
     }
 
