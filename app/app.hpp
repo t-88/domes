@@ -24,33 +24,7 @@
 
 
 static int idx = 0; 
-static Column todo_container;
 
-static void onScroll(Event::Event event) {
-    todo_container.scroll_y(event.scroll_dir_y * 25);
-}
-static void addTodo(void* userdata) {
-    todo_container.push(new Card(idx));
-    idx++;
-}
-static void onRemoveTodo(void* userdata) {
-    int idx = userdata_to(int,userdata);
-    int i = 0;
-    for (i = 0; i < todo_container.children.size(); i++) {
-        if(((Card*)todo_container.children[i])->uid == idx) {
-            break;
-        }
-    }
-    delete todo_container.children[i];
-    todo_container.children.erase(todo_container.children.begin() + i);
-}
-static void onFinishTodo(void* index) {
-    printf("todo %d is finished\n",userdata_to(int,index));
-}
-static void init_state() {
-    onRemoveTodoCallback = onRemoveTodo;
-    onFinishTodoCallback = onFinishTodo;
-}
 
 
 class TodoApp
@@ -63,8 +37,10 @@ private:
     Text time_text;
 
     Input* text_input;
-    
 
+    Column todo_container;
+
+    
 
     DisplayBuffer buffer;
     LayoutNode layout_tree;
@@ -131,14 +107,17 @@ TodoApp::TodoApp() {
         "display : "  DisplayInline ";"
     );
 
-    todo_container.onScrollCallback = onScroll;
-    add_btn.onClickCallback = addTodo;
+
+
 
 
     text_input = new Input("text-input");
+    text_input->max_chars = 32;
     setStyle(
         *text_input,
         "display : "  DisplayInline ";"
+        "margin_left: 25;"
+        "margin_right: 25;"
     );
 
 
@@ -146,9 +125,37 @@ TodoApp::TodoApp() {
     root.push(&date_text);
     root.push(&time_text);
     root.push(&todo_container);
-    root.push(&add_btn);
     root.push(text_input);
+    root.push(&add_btn);
 
+
+
+
+    todo_container.onScrollCallbackLambda = [&](Event::Event event) { 
+        todo_container.scroll_y(event.scroll_dir_y * 25);
+    };
+
+    add_btn.onClickCallbackLambda = [&](void* userdata) {
+        auto card = new Card(idx,text_input->text_element.text);
+        text_input->text_element.update_text("");
+
+        // create todo
+        card->delete_btn.onClickCallbackLambda = [&](void* userdata) {
+            int idx = userdata_to(int,userdata);
+            int i = 0;
+            for (i = 0; i < todo_container.children.size(); i++) {
+                if(((Card*)todo_container.children[i])->uid == idx) {
+                    break;
+                }
+            }
+            delete todo_container.children[i];
+            todo_container.children.erase(todo_container.children.begin() + i);            
+        }; 
+
+        // remove todo
+        todo_container.push(card);
+        idx++;
+    };
 
     layout_tree = LayoutNode(&root);
     layout_tree.is_root = true;

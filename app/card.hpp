@@ -12,13 +12,12 @@ class Card : public Node
 {
 public:
     Element delete_btn;
-    Element finish_btn;
-    Text todo_text;
+    Text todo_text_element;
     int uid;
 
-    Card() : Card(0){}
+    Card() : Card(0,""){}
 
-    Card(int _uid) : Node(NodeTypes::Elem) {
+    Card(int _uid,std::string todo_text) : Node(NodeTypes::Elem) {
         children.clear();
 
         type = "todo";
@@ -27,7 +26,8 @@ public:
 
         setStyle(
             *this,
-            "color: 125,50,0,255;"
+            "color: 0,0,0,0;"
+            "border_color : 255,255,255,255;"
             "margin_left : 25;" 
             "margin_top : 20;" 
             "height : 70;" 
@@ -39,41 +39,31 @@ public:
         setStyle(
             delete_btn,
             "color: 255,0,0,255;"
+            "display : " DisplayInline ";"
+            "margin_top : 20;"
             "margin_left : 10;"
-            "margin_top : 10;"
-            "height : 20;" 
-            "width : 20;"
+            "margin_right : 10;"
+            "height : 30;" 
+            "width : 30;"
         );
-        children.push_back(&delete_btn);
 
         delete_btn.userdata = &uid;
-        delete_btn.onClickCallback = onRemoveTodoCallback;
 
 
 
-        finish_btn =  Element("finish-btn");
+
+
+
+        todo_text_element = Text(todo_text.c_str());
         setStyle(
-            finish_btn,
+            todo_text_element,
             "display:" DisplayInline ";"
-            "color: 0,255,0,255;"
-            "margin_left : 10;"
-            "margin_top : 10;"
-            "height : 20;" 
-            "width : 20;"
+            "margin_top : 15;" 
+
         );
-        children.push_back(&finish_btn);
-        finish_btn.userdata = &uid;
-        finish_btn.onClickCallback = onFinishTodoCallback;
 
-
-        sprintf(buffer,"todo number %d",uid);
-
-        todo_text = Text(buffer);
-        setStyle(
-            todo_text,
-            "display:" DisplayInline ";"
-        );
-        children.push_back(&todo_text);
+        this->push(&delete_btn);
+        this->push(&todo_text_element);
     }   
 
     ~Card(){

@@ -8,6 +8,7 @@
 
 
 #include "../dom/element.hpp"
+#include "../dom/text.hpp"
 #include "../utils.hpp"
 
 class Input : public Node
@@ -20,6 +21,8 @@ public:
     bool blink_visible = false;
     float blink_timer = 0;
     float blink_delay = 0.4f;
+
+    int max_chars = 10;
 
 public:
     Input() : Node(NodeTypes::Elem) {
@@ -75,12 +78,15 @@ public:
             if(selected) {
                 if(event.text) {
                     // if event is text
+                    if(text_element.text.size() >= max_chars)
+                     return;
                     text_element.text.push_back(event.text[0]);
                     text_element.update_text(text_element.text);
                 } else {
                     if(event.key == 42) {
                         // remove last char, backspace
                         if(!text_element.text.size()) return;
+                        
                         text_element.text.pop_back();
                         text_element.update_text(text_element.text);
                     }

@@ -62,8 +62,6 @@ void quit() {
 
 int main() {
     init();
-    init_state();
-
     TodoApp app;
 
     Uint32 start = SDL_GetTicks();

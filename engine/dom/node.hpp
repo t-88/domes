@@ -42,6 +42,7 @@ public:
     std::function<void(Event::Event event)> onKeyPressCallbackLambda;
 
     void (*onScrollCallback)(Event::Event event) = nullptr;
+    std::function<void(Event::Event event)> onScrollCallbackLambda;
 
 
     bool scrollable = false;
@@ -51,6 +52,7 @@ public:
         style = new Style();
         onClickCallbackLambda = [](void* userdata){return;};
         onKeyPressCallbackLambda = [](Event::Event event){return;};
+        onScrollCallbackLambda = [](Event::Event event){return;};
     }
     Node(NodeType t) : Node()  { 
         node_type=  t;
@@ -89,8 +91,9 @@ public:
     }
 
     void onScroll(Event::Event event) {
-        if(!onScrollCallback) return;
-        onScrollCallback(event);
+        if(onScrollCallback) onScrollCallback(event);
+        onScrollCallbackLambda(event);
+
     }
 
 
