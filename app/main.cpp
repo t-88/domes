@@ -63,6 +63,8 @@ void quit() {
 int main() {
     init();
     TodoApp app;
+    app.load_todos();
+
 
     Uint32 start = SDL_GetTicks();
     Uint32 end = start;
@@ -141,6 +143,8 @@ int main() {
         SDL_RenderPresent(renderer);
     }
 
+
+    app.save_todos();
 
     // free all
     quit();

@@ -1,6 +1,8 @@
 #ifndef TODO_APP_HPP
 #define TODO_APP_HPP
 
+#include <SDL2/SDL.h>
+
 
 #include "../engine/dom/node.hpp"
 #include "../engine/dom/text.hpp"
@@ -13,17 +15,11 @@
 #include "../engine/render/display_buffer.hpp"
 #include "../engine/events/event.hpp"
 #include "card.hpp"
-
-
 #include "../engine/render/display_buffer.hpp"
-
-
 #include "utils.hpp"
-#include <SDL2/SDL.h>
 
 
 
-static int idx = 0; 
 
 
 
@@ -39,6 +35,10 @@ private:
     Input* text_input;
 
     Column todo_container;
+    std::vector<std::string> todos;
+
+    int idx = 0; 
+
 
     
 
@@ -52,6 +52,10 @@ public:
     void render();
 
     void fire_event(Event::Event event);
+    void add_todo(std::string todo = "",bool loading = false);
+
+    void save_todos();
+    void load_todos();
 };
 
 TodoApp::TodoApp() {
@@ -95,7 +99,7 @@ TodoApp::TodoApp() {
         todo_container,
         "color : 0,255,0,0;"
         "height : 280;"
-        "margin_bottom: 20;"
+        "margin_bottom: 15;"
     );
 
     add_btn = Element("add-btn");
@@ -112,12 +116,12 @@ TodoApp::TodoApp() {
 
 
     text_input = new Input("text-input");
+    text_input->selected = true;
     text_input->max_chars = 32;
     setStyle(
         *text_input,
         "display : "  DisplayInline ";"
-        "margin_left: 25;"
-        "margin_right: 25;"
+        "margin_left: 45;"
     );
 
 
@@ -126,7 +130,6 @@ TodoApp::TodoApp() {
     root.push(&time_text);
     root.push(&todo_container);
     root.push(text_input);
-    root.push(&add_btn);
 
 
 
@@ -134,9 +137,27 @@ TodoApp::TodoApp() {
     todo_container.onScrollCallbackLambda = [&](Event::Event event) { 
         todo_container.scroll_y(event.scroll_dir_y * 25);
     };
+    add_btn.onClickCallbackLambda = [&](void* userdata) { add_todo(); };
+    text_input->onSubmitCallbackLambda = [&]() { add_todo();};
 
-    add_btn.onClickCallbackLambda = [&](void* userdata) {
-        auto card = new Card(idx,text_input->text_element.text);
+    layout_tree = LayoutNode(&root);
+    layout_tree.is_root = true;
+}
+
+TodoApp::~TodoApp() {}
+
+
+
+void TodoApp::add_todo(std::string todo,bool loading) {
+    if(text_input->text_element.text != "") { todo = text_input->text_element.text;}
+    if(todo == "") return;
+
+
+    if(!loading)
+        todos.push_back(todo);
+    
+
+    auto card = new Card(idx,todo);
         text_input->text_element.update_text("");
 
         // create todo
@@ -149,23 +170,66 @@ TodoApp::TodoApp() {
                 }
             }
             delete todo_container.children[i];
+
+            todos.erase(todos.begin() + i);
             todo_container.children.erase(todo_container.children.begin() + i);            
         }; 
 
-        // remove todo
         todo_container.push(card);
         idx++;
-    };
-
-    layout_tree = LayoutNode(&root);
-    layout_tree.is_root = true;
 }
-
-TodoApp::~TodoApp() {
-}
-
 void TodoApp::fire_event(Event::Event event) {
     layout_tree.fire_event(event);
+}
+
+void TodoApp::save_todos() {
+
+    FILE* f;
+    f = fopen("todos.db","w"); 
+    for (size_t i = 0; i < todos.size(); i++) {
+        fwrite(todos[i].c_str(),1,todos[i].size(),f);
+        fwrite("\n",1,1,f);
+    }
+    fclose(f);
+}
+void TodoApp::load_todos() {
+    FILE* f;
+    f = fopen("todos.db","r");
+    if(!f) { return; } // file dosent exist
+    
+
+    fseek(f,0,SEEK_END);
+    int fsize = ftell(f);
+    fseek(f,0,SEEK_SET);
+
+    
+    if(!fsize) return; // file is empty
+
+    todos.clear();
+
+    std::string todo;
+
+    char c;
+    do
+    {
+        c =  fgetc(f);
+        if(c == EOF) break;
+        if(c == '\n') {
+            todos.push_back(todo);
+            todo.clear();
+        } else {
+            todo.push_back(c);
+        }
+    } while (c != EOF);
+    
+    assert(feof(f) != EOF && "something gone wrong with ur file");
+    fclose(f);
+
+    for (size_t i = 0; i < todos.size(); i++) {
+        add_todo(todos[i],true);
+    }
+    
+    
 }
 
 
