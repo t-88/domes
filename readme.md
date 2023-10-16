@@ -6,6 +6,7 @@ trying to implement a simple layout engine and apply it on a todo app :).
 
 # How To Run
 **u need to have sdl2 and sdl2_ttf to do the rendering of the app**
+-   u need to make a edit the path for the font and todos.db files to make them global
 ```
     $ ./run.sh
 ```     

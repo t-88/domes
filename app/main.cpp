@@ -26,13 +26,15 @@ static SDL_Event event;
 static TTF_Font* font;
 
 
+
+
 // init
 void init() {
     Globals::set_window_sizing(600,400);
     SDL_Init(SDL_INIT_EVERYTHING);
     TTF_Init();
 
-    Globals::load_font("font/SpaceMono-Regular.ttf");
+    Globals::load_font(FONT_PATH);
 
     window = SDL_CreateWindow(
                         "Domes",

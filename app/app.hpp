@@ -185,7 +185,7 @@ void TodoApp::fire_event(Event::Event event) {
 void TodoApp::save_todos() {
 
     FILE* f;
-    f = fopen("todos.db","w"); 
+    f = fopen(TODOS_DB_PATH,"w"); 
     for (size_t i = 0; i < todos.size(); i++) {
         fwrite(todos[i].c_str(),1,todos[i].size(),f);
         fwrite("\n",1,1,f);
@@ -194,7 +194,7 @@ void TodoApp::save_todos() {
 }
 void TodoApp::load_todos() {
     FILE* f;
-    f = fopen("todos.db","r");
+    f = fopen(TODOS_DB_PATH,"r");
     if(!f) { return; } // file dosent exist
     
 
